@@ -11,7 +11,11 @@ function AdminDashboard() {
     const [productForm, setProductForm] = useState({
         name: '',
         price: '',
-        image: ''
+        image: '',
+        description: '',
+        sizes: '',
+        colors: '',
+        stock: '100'
     })
     const navigate = useNavigate()
 
@@ -58,8 +62,14 @@ function AdminDashboard() {
     const handleAddProduct = async (e) => {
         e.preventDefault()
         try {
-            await axios.post('/.netlify/functions/products', productForm)
-            setProductForm({ name: '', price: '', image: '' })
+            const productData = {
+                ...productForm,
+                sizes: productForm.sizes ? productForm.sizes.split(',').map(s => s.trim()) : [],
+                colors: productForm.colors ? productForm.colors.split(',').map(c => c.trim()) : [],
+                stock: Number(productForm.stock) || 100
+            }
+            await axios.post('/.netlify/functions/products', productData)
+            setProductForm({ name: '', price: '', image: '', description: '', sizes: '', colors: '', stock: '100' })
             setShowProductForm(false)
             fetchProducts()
             alert('Product added successfully!')
@@ -74,7 +84,11 @@ function AdminDashboard() {
         setProductForm({
             name: product.name,
             price: product.price,
-            image: product.image
+            image: product.image,
+            description: product.description || '',
+            sizes: product.sizes ? product.sizes.join(', ') : '',
+            colors: product.colors ? product.colors.join(', ') : '',
+            stock: product.stock || 100
         })
         setShowProductForm(true)
     }
@@ -82,8 +96,14 @@ function AdminDashboard() {
     const handleUpdateProduct = async (e) => {
         e.preventDefault()
         try {
-            await axios.put(`/.netlify/functions/product-update?id=${editingProduct._id}`, productForm)
-            setProductForm({ name: '', price: '', image: '' })
+            const productData = {
+                ...productForm,
+                sizes: productForm.sizes ? productForm.sizes.split(',').map(s => s.trim()) : [],
+                colors: productForm.colors ? productForm.colors.split(',').map(c => c.trim()) : [],
+                stock: Number(productForm.stock) || 100
+            }
+            await axios.put(`/.netlify/functions/product-update?id=${editingProduct._id}`, productData)
+            setProductForm({ name: '', price: '', image: '', description: '', sizes: '', colors: '', stock: '100' })
             setShowProductForm(false)
             setEditingProduct(null)
             fetchProducts()
@@ -121,7 +141,7 @@ function AdminDashboard() {
     const cancelForm = () => {
         setShowProductForm(false)
         setEditingProduct(null)
-        setProductForm({ name: '', price: '', image: '' })
+        setProductForm({ name: '', price: '', image: '', description: '', sizes: '', colors: '', stock: '100' })
     }
 
     return (
@@ -130,12 +150,20 @@ function AdminDashboard() {
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex justify-between items-center h-16">
                         <h1 className="text-2xl font-bold text-gray-800">Admin Dashboard</h1>
-                        <button
-                            onClick={handleLogout}
-                            className="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700"
-                        >
-                            Logout
-                        </button>
+                        <div className="flex gap-4">
+                            <button
+                                onClick={() => navigate('/admin/analytics')}
+                                className="bg-purple-600 text-white py-2 px-4 rounded-md hover:bg-purple-700"
+                            >
+                                📊 Analytics
+                            </button>
+                            <button
+                                onClick={handleLogout}
+                                className="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700"
+                            >
+                                Logout
+                            </button>
+                        </div>
                     </div>
                 </div>
             </nav>
@@ -180,40 +208,94 @@ function AdminDashboard() {
                                     {editingProduct ? 'Edit Product' : 'Add New Product'}
                                 </h3>
                                 <form onSubmit={editingProduct ? handleUpdateProduct : handleAddProduct} className="space-y-4">
-                                    <div>
-                                        <label className="block text-gray-700 mb-2">Product Name</label>
-                                        <input
-                                            type="text"
-                                            name="name"
-                                            value={productForm.name}
-                                            onChange={handleProductFormChange}
-                                            required
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
+                                    <div className="grid md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-gray-700 mb-2">Product Name *</label>
+                                            <input
+                                                type="text"
+                                                name="name"
+                                                value={productForm.name}
+                                                onChange={handleProductFormChange}
+                                                required
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-gray-700 mb-2">Price (₹) *</label>
+                                            <input
+                                                type="number"
+                                                name="price"
+                                                value={productForm.price}
+                                                onChange={handleProductFormChange}
+                                                required
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
                                     </div>
+
                                     <div>
-                                        <label className="block text-gray-700 mb-2">Price (₹)</label>
-                                        <input
-                                            type="number"
-                                            name="price"
-                                            value={productForm.price}
-                                            onChange={handleProductFormChange}
-                                            required
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-gray-700 mb-2">Image URL</label>
+                                        <label className="block text-gray-700 mb-2">Image URL *</label>
                                         <input
                                             type="url"
                                             name="image"
                                             value={productForm.image}
                                             onChange={handleProductFormChange}
                                             required
-                                            placeholder="https://example.com/image.jpg"
+                                            placeholder="https://i.ibb.co/ABC123/image.jpg"
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        />
+                                        <p className="text-sm text-gray-500 mt-1">Use direct image URL from ImgBB or similar service</p>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-gray-700 mb-2">Description</label>
+                                        <textarea
+                                            name="description"
+                                            value={productForm.description}
+                                            onChange={handleProductFormChange}
+                                            rows="3"
+                                            placeholder="Product description..."
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        ></textarea>
+                                    </div>
+
+                                    <div className="grid md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-gray-700 mb-2">Sizes (comma separated)</label>
+                                            <input
+                                                type="text"
+                                                name="sizes"
+                                                value={productForm.sizes}
+                                                onChange={handleProductFormChange}
+                                                placeholder="S, M, L, XL, XXL"
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-gray-700 mb-2">Colors (comma separated)</label>
+                                            <input
+                                                type="text"
+                                                name="colors"
+                                                value={productForm.colors}
+                                                onChange={handleProductFormChange}
+                                                placeholder="Red, Blue, Black, White"
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-gray-700 mb-2">Stock Quantity</label>
+                                        <input
+                                            type="number"
+                                            name="stock"
+                                            value={productForm.stock}
+                                            onChange={handleProductFormChange}
+                                            min="0"
                                             className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         />
                                     </div>
+
                                     <div className="flex gap-4">
                                         <button
                                             type="submit"
@@ -247,6 +329,9 @@ function AdminDashboard() {
                                             Price
                                         </th>
                                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Stock
+                                        </th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Actions
                                         </th>
                                     </tr>
@@ -257,8 +342,23 @@ function AdminDashboard() {
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <img src={product.image} alt={product.name} className="w-16 h-16 object-cover rounded" />
                                             </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">{product.name}</td>
+                                            <td className="px-6 py-4">
+                                                <div>
+                                                    <p className="font-semibold">{product.name}</p>
+                                                    {product.sizes && product.sizes.length > 0 && (
+                                                        <p className="text-xs text-gray-500">Sizes: {product.sizes.join(', ')}</p>
+                                                    )}
+                                                </div>
+                                            </td>
                                             <td className="px-6 py-4 whitespace-nowrap">₹{product.price}</td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <span className={`px-2 py-1 rounded-full text-xs ${product.stock > 10 ? 'bg-green-100 text-green-800' :
+                                                        product.stock > 0 ? 'bg-yellow-100 text-yellow-800' :
+                                                            'bg-red-100 text-red-800'
+                                                    }`}>
+                                                    {product.stock || 0}
+                                                </span>
+                                            </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <button
                                                     onClick={() => handleEditProduct(product)}

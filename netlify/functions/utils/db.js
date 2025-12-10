@@ -21,7 +21,11 @@ const connectDB = async () => {
 const ProductSchema = new mongoose.Schema({
     name: { type: String, required: true },
     price: { type: Number, required: true },
-    image: { type: String, required: true }
+    image: { type: String, required: true },
+    description: { type: String, default: '' },
+    sizes: { type: [String], default: [] },
+    colors: { type: [String], default: [] },
+    stock: { type: Number, default: 100 }
 })
 
 const OrderSchema = new mongoose.Schema({
